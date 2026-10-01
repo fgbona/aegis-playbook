@@ -1,0 +1,6 @@
+Sentinel     → namespace sentinel-prod, pods com label app=sentinel
+Relay        → namespace relay-prod,    pods com label app=relay
+API gateway  → namespace edge,          pods com label app=api-gateway
+Forge        → namespace forge-prod,    pods com label app=forge,   porta 5432 (Postgres do warehouse)
+Cerebro      → namespace cerebro-prod,  pods com label app=cerebro, porta 9200 (Elasticsearch)
+DNS interno  → namespace kube-system,   pods com label k8s-app=kube-dns, porta 53

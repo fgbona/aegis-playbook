@@ -1,0 +1,15 @@
+# manifesto barrado pela revisão de segurança — permissivo demais
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sentinel-allow
+  namespace: sentinel-prod
+spec:
+  podSelector: {}           # aplica a todos os pods do namespace
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - {}                    # libera QUALQUER origem
+  egress:
+    - {}                    # libera QUALQUER destino

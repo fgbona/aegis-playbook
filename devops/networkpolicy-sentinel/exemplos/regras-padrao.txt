@@ -1,0 +1,8 @@
+NetworkPolicy para o namespace "sentinel-prod":
+- pods do Sentinel só aceitam tráfego de entrada do Relay (consumo de
+  eventos) e do gateway de API da plataforma
+- pods do Sentinel só fazem saída para: Forge (warehouse, porta 5432),
+  Cerebro (busca, porta 9200) e DNS interno
+- nada de "allow all" em ingress ou egress
+- política default-deny explícita no namespace
+- toda regra precisa de comentário dizendo qual fluxo legítimo ela libera

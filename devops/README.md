@@ -28,3 +28,4 @@ Entram aqui prompts relacionados a:
 - [diagnostico-pipeline-batch](./diagnostico-pipeline-batch/) — Elo 1 da cadeia de migração batch → event-driven: transforma a descrição do pipeline atual num diagnóstico estruturado com IDs.
 - [roteiro-migracao-event-driven](./roteiro-migracao-event-driven/) — Elo 2 da cadeia: recebe o diagnóstico e os requisitos e devolve a sequência de etapas verificáveis e reversíveis da migração.
 - [plano-executavel-de-etapa](./plano-executavel-de-etapa/) — Elo 3 da cadeia: recebe o roteiro e o ID de uma etapa e devolve o plano executável com rollback.
+- [networkpolicy-sentinel](./networkpolicy-sentinel/) — Reescreve uma NetworkPolicy permissiva na versão endurecida (default-deny + allows mínimos comentados) com autoverificação, a partir do padrão interno e do mapa de serviços.
