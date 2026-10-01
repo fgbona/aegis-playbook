@@ -1,0 +1,36 @@
+INVENTÁRIO
+I1 | Ingestão | forge-batch-ingest | job cron, agenda horária (a cada 60 min), formato e volume por ciclo A CONFIRMAR: formato de entrada e volume por ciclo
+I2 | Transformação | etapa 1 de 14 | ordem e função específica A CONFIRMAR: identidade de cada etapa
+I3 | Transformação | etapas 2–13 de 14 | ordem e função específica A CONFIRMAR: identidade de cada etapa
+I4 | Transformação | etapa 14 de 14 | última etapa da cadeia Spark; função específica A CONFIRMAR
+I5 | Transformação | pipeline Spark (conjunto das 14 etapas) | duração total declarada ~40 min; executado sequencialmente (inferido, dado "encadeadas")
+I6 | Destino | tabelas no data warehouse | particionadas por hora; nome do DW e esquema das tabelas A CONFIRMAR
+I7 | Consumidores | Sentinel | lê tabelas agregadas geradas pelo Forge; horário e frequência de leitura A CONFIRMAR
+I8 | Consumidores | Cerebro | indexa eventos transformados gerados pelo Forge; horário e frequência A CONFIRMAR
+I9 | Consumidores | relatórios de billing da Pepper | rodam de madrugada; dependência das tabelas do Forge; horário exato e janela de tolerância A CONFIRMAR
+
+ACOPLAMENTOS
+A1 | Sentinel depende de Forge | contrato: tabelas agregadas, particionadas por hora | declarado; horário-limite e esquema A CONFIRMAR
+A2 | Cerebro depende de Forge | contrato: eventos transformados (tabelas ou outro canal A CONFIRMAR), partição por hora (inferido, dado particionamento do destino) | declarado; esquema e horário-limite A CONFIRMAR
+A3 | Pepper (billing) depende de Forge | contrato: tabelas do DW disponíveis antes do início dos relatórios noturnos; horário-limite exato A CONFIRMAR | declarado; esquema A CONFIRMAR
+A4 | etapas 2–14 dependem da etapa anterior | contrato: saída de cada etapa é entrada da seguinte, dentro do mesmo pipeline Spark | inferido, dado "encadeadas"
+A5 | forge-batch-ingest depende do cron | contrato: disparo a cada 60 min; sem mecanismo de disparo alternativo declarado | declarado; comportamento em caso de atraso do cron A CONFIRMAR
+
+PONTOS FRÁGEIS
+F1 | pipeline completo (ingestão + 14 etapas) | acúmulo de volume por falha em cascata: quando um ciclo de 60 min falha, os dados desse ciclo não são descartados nem reprocessados imediatamente; no ciclo seguinte o job processa o volume normal mais o volume retido do ciclo anterior, dobrando a carga sobre o Spark e o destino; se o ciclo seguinte também atrasar ou falhar, o acúmulo pode crescer além do dobro (inferido); consumidores que dependem de partições horárias recebem dados atrasados ou ausentes | evidência: "se um lote falha, o próximo acumula o dobro de volume"
+F2 | janela de tempo entre fim do pipeline e início dos relatórios da Pepper | mecanismo: o pipeline leva ~40 min de processamento após o disparo do cron; se o cron disparar no início da hora e o pipeline durar 40 min, a partição fica disponível ~40 min depois; qualquer atraso (falha, reprocessamento, acúmulo F1) pode ultrapassar o horário-limite dos relatórios noturnos da Pepper, causando execução sobre dados incompletos ou ausentes | evidência: duração declarada de ~40 min + relatórios de madrugada declarados; margem exata A CONFIRMAR
+F3 | cadeia de 14 etapas Spark | mecanismo: falha em qualquer etapa intermediária interrompe toda a cadeia (inferido, dado "encadeadas"); não há declaração de ponto de retomada parcial (checkpoint), logo uma falha na etapa 13 exige reprocessamento desde o início (inferido) | evidência: "14 etapas de processamento encadeadas"; ausência de menção a checkpoints
+
+CONTRATOS A PRESERVAR
+C1 | Sentinel | recebe tabelas agregadas particionadas por hora produzidas pelo Forge | A CONFIRMAR: horário-limite de disponibilidade, esquema, granularidade da agregação; quebra se partições atrasarem ou o esquema mudar
+C2 | Cerebro | recebe eventos transformados do Forge (canal exato A CONFIRMAR: tabela, fila ou outro) | A CONFIRMAR: contrato de esquema, horário-limite e frequência de indexação; quebra se eventos chegarem fora de ordem, atrasados ou com esquema alterado
+C3 | Pepper (billing) | recebe tabelas do DW completas e disponíveis antes do início dos relatórios noturnos | A CONFIRMAR: horário-limite exato, quais tabelas, esquema; quebra se dados estiverem incompletos ou indisponíveis no horário dos relatórios
+
+PERGUNTAS EM ABERTO
+Q1 | Existe mecanismo de reprocessamento ou reexecução manual quando um ciclo falha? | define se a migração precisa preservar ou substituir lógica de recuperação de falhas; ausência de reprocessamento agrava F1 | F1, A5
+Q2 | Qual o horário-limite (deadline) que Sentinel, Cerebro e Pepper toleram para receber os dados de cada partição horária? | sem esse dado o roteiro não pode dimensionar SLA do novo modelo nem avaliar risco de quebra de contrato | C1, C2, C3, F2
+Q3 | As 14 etapas Spark possuem checkpoints ou pontos de retomada intermediários? | determina o custo de reprocessamento em caso de falha parcial e influencia a estratégia de decomposição das etapas na migração | F3, I5
+Q4 | Qual o volume típico de dados por ciclo de 60 min (e o volume no cenário de acúmulo)? | necessário para avaliar viabilidade de processamento contínuo e dimensionar o novo modelo | I1, F1
+Q5 | O destino (data warehouse) e o esquema das tabelas são compartilhados com outros sistemas além de Sentinel, Cerebro e Pepper? | outros consumidores não declarados podem ter contratos que a migração quebraria sem aviso | I6, C1, C2, C3
+Q6 | O forge-batch-ingest lê de qual fonte (banco transacional, fila, lago de dados, API)? | o tipo de fonte determina se o disparo por evento é viável e qual mecanismo de captura de mudança deve ser avaliado | I1, A5
+Q7 | Há janela de manutenção ou indisponibilidade programada do DW que o pipeline já respeita? | restrições de janela existentes precisam ser preservadas ou renegociadas no roteiro | I6, C3, F2

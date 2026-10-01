@@ -1,0 +1,7 @@
+Forge hoje:
+- ingestão: um job em cron acorda a cada 60min (o "forge-batch-ingest")
+- transformação: 14 etapas de processamento encadeadas (em Spark), ~40min no total
+- destino: grava em tabelas no data warehouse, particionadas por hora
+- ponto frágil: se um lote falha, o próximo acumula o dobro de volume
+- quem depende do Forge: Sentinel (lê as tabelas agregadas), Cerebro (indexa
+  os eventos transformados) e os relatórios de billing da Pepper (rodam de madrugada)

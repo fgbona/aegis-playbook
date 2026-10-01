@@ -1,0 +1,55 @@
+PREMISSAS
+P1 | O cron horário é o único mecanismo de disparo do Forge; o Relay será a nova fonte de eventos contínuos — sustentado por I1, A5, Q6 e pelo requisito de consumo contínuo.
+P2 | Os contratos C1, C2 e C3 devem permanecer íntegros durante toda a migração; nenhuma etapa pode quebrar partições horárias, esquema ou disponibilidade para Sentinel, Cerebro e Pepper — sustentado por C1, C2, C3 e pelo requisito de manter dependentes funcionando.
+P3 | A migração ocorre em passos incrementais com reversibilidade explícita; o cron só é desligado após todos os consumidores migrados e período de observação — sustentado por F1, F3 e pelo requisito de ausência de big-bang.
+P4 | As perguntas Q2, Q4 e Q6 bloqueiam decisões de dimensionamento e viabilidade; as demais (Q1, Q3, Q5, Q7) informam etapas específicas mas não bloqueiam o início da sequência.
+P5 | O volume por ciclo e os horários-limite dos consumidores são desconhecidos; limiares dos critérios de conclusão marcados como A CONFIRMAR onde necessário — sustentado por Q2, Q4.
+
+ETAPAS
+E1 | Resolução dos bloqueios críticos | nenhum | depende de: nenhuma | C1, C2, C3
+   conclusão: Q2, Q4 e Q6 respondidos e registrados formalmente pelo time | volta: não se aplica (etapa de levantamento); pode ser refeita a qualquer momento antes de E2
+
+E2 | Instrumentação de observabilidade do pipeline atual | nenhum | depende de: E1 | nenhum
+   conclusão: métricas de duração por ciclo, volume ingerido, horário de disponibilidade das partições e taxa de falha do cron coletadas por A CONFIRMAR: número mínimo de ciclos consecutivos sem anomalia | volta: remoção da instrumentação sem efeito sobre o pipeline; possível até E4
+
+E3 | Publicação paralela dos eventos do Forge no Relay sem alterar o fluxo batch | Strangler Fig — introdução de canal paralelo sem corte | depende de: E1, E2 | C1, C2, C3
+   conclusão: 100 % dos eventos processados pelo batch também publicados no Relay, confirmado por comparação de contagem entre saída do DW e fila do Relay por A CONFIRMAR: número de ciclos | volta: desativação da publicação no Relay; o batch continua inalterado; possível até E5
+
+E4 | Substituição do pipeline Spark monolítico por processamento em micro-lotes contínuos sobre o Relay | Strangler Fig — substituição incremental do núcleo | depende de: E3 | C1, C2, C3
+   conclusão: micro-lotes processam o mesmo volume que o batch em janelas de A CONFIRMAR: duração-alvo por bloco, sem atraso acumulado e sem divergência de esquema nas tabelas de destino | volta: reativação do pipeline Spark original; o cron permanece ativo durante toda esta etapa; possível até E5
+
+E5 | Execução paralela de batch e evento-driven com comparação de saídas | Parallel Run — execução dupla com comparação antes do corte | depende de: E4 | C1, C2, C3
+   conclusão: saídas do batch e do novo pipeline divergem em menos de A CONFIRMAR: limiar de tolerância (contagem de registros e valores agregados) por A CONFIRMAR: número de ciclos consecutivos | volta: desligamento do novo pipeline; batch assume sozinho; possível até E6
+
+E6 | Migração de Cerebro para consumir do novo pipeline | migração de consumidor por vez | depende de: E5 | C2
+   conclusão: Cerebro indexa eventos do novo pipeline sem erros de esquema e dentro do horário-limite A CONFIRMAR por A CONFIRMAR: número de ciclos | volta: Cerebro volta a ler da fonte anterior; possível até E7
+
+E7 | Migração de Sentinel para consumir do novo pipeline | migração de consumidor por vez | depende de: E6 | C1
+   conclusão: Sentinel lê tabelas agregadas do novo pipeline sem atraso além de A CONFIRMAR: horário-limite e sem divergência de esquema por A CONFIRMAR: número de ciclos | volta: Sentinel volta à fonte anterior; possível até E8
+
+E8 | Migração dos relatórios de billing da Pepper para o novo pipeline | migração de consumidor por vez | depende de: E7 | C3
+   conclusão: relatórios noturnos da Pepper executam sobre dados completos do novo pipeline dentro da janela de madrugada por A CONFIRMAR: número de noites consecutivas sem falha | volta: Pepper volta a depender das tabelas geradas pelo batch; possível até E9
+
+E9 | Período de observação com cron ainda ativo como fallback | corte gradual com chave de liga/desliga | depende de: E8 | C1, C2, C3
+   conclusão: nenhum consumidor aciona o fallback batch e nenhum contrato C* é violado por A CONFIRMAR: duração mínima do período de observação | volta: reativação do batch como fonte primária via chave de liga/desliga; possível até E10
+
+E10 | Desligamento do cron e encerramento do pipeline batch | nenhum | depende de: E9 | C1, C2, C3
+   conclusão: cron removido, pipeline Spark descomissionado e ausência de alertas de contrato C* por A CONFIRMAR: período pós-desligamento | volta: não há reversão automatizada após este ponto; reativação exige redeployment manual
+
+DEPENDÊNCIAS E ORDEM
+Ordem linear obrigatória: E1 → E2 → E3 → E4 → E5 → E6 → E7 → E8 → E9 → E10; E6, E7 e E8 são sequenciais entre si (um consumidor por vez) mas cada uma pode ser antecipada ou postergada independentemente desde que E5 esteja concluída; nenhuma etapa admite paralelismo com a seguinte dado o requisito de reversibilidade.
+
+RISCOS RESIDUAIS
+R1 | acúmulo de volume no Relay se o novo pipeline atrasar equivale ao F1 do batch | E4, E5, E9 | F1
+R2 | janela entre fim do processamento contínuo e início dos relatórios da Pepper pode ser insuficiente se o volume real (Q4) for maior que o estimado | E8, E9 | F2, C3
+R3 | falha em etapa intermediária do novo pipeline sem checkpoints replica o risco F3 no modelo evento-driven | E4, E5 | F3
+R4 | consumidores não declarados do DW (Q5) podem ser afetados por mudanças de esquema ou particionamento sem que a migração os identifique | E4, E5, E10 | C1, C2, C3
+
+PENDÊNCIAS A CONFIRMAR
+A CONFIRMAR: horário-limite de disponibilidade de dados para Sentinel, Cerebro e Pepper (Q2) — bloqueia definição dos limiares de conclusão de E6, E7 e E8
+A CONFIRMAR: volume típico por ciclo de 60 min e volume no cenário de acúmulo (Q4) — bloqueia dimensionamento dos micro-lotes em E4 e avaliação de R2
+A CONFIRMAR: fonte de leitura do forge-batch-ingest (Q6) — bloqueia viabilidade técnica de E3 (publicação no Relay)
+A CONFIRMAR: existência de mecanismo de reprocessamento manual (Q1) — informa se E4 precisa incluir lógica de recuperação equivalente
+A CONFIRMAR: existência de checkpoints nas 14 etapas Spark (Q3) — informa custo de fallback em E4 e E5 e mitiga R3
+A CONFIRMAR: outros consumidores do DW além de Sentinel, Cerebro e Pepper (Q5) — bloqueia garantia de ausência de quebra de contrato em E4 e E10
+A CONFIRMAR: janelas de manutenção do DW (Q7) — informa restrições de horário para E4 e E8

@@ -25,3 +25,6 @@ Entram aqui prompts relacionados a:
 - [nota-de-triagem](./nota-de-triagem/) — Converte um alerta cru do Sentinel na nota de triagem padronizada de cinco linhas (alerta, impacto, hipótese, ação, escalonamento).
 - [causa-raiz](./causa-raiz/) — Análise de causa-raiz de degradação num cluster Elasticsearch cruzando configuração, métricas e logs, separando causa de consequência.
 - [decisao-backpressure](./decisao-backpressure/) — Apoia a decisão de estratégia de backpressure num barramento de eventos comparando caminhos contra as restrições antes de recomendar, em formato de ADR.
+- [diagnostico-pipeline-batch](./diagnostico-pipeline-batch/) — Elo 1 da cadeia de migração batch → event-driven: transforma a descrição do pipeline atual num diagnóstico estruturado com IDs.
+- [roteiro-migracao-event-driven](./roteiro-migracao-event-driven/) — Elo 2 da cadeia: recebe o diagnóstico e os requisitos e devolve a sequência de etapas verificáveis e reversíveis da migração.
+- [plano-executavel-de-etapa](./plano-executavel-de-etapa/) — Elo 3 da cadeia: recebe o roteiro e o ID de uma etapa e devolve o plano executável com rollback.

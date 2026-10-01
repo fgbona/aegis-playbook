@@ -1,0 +1,3 @@
+- consumir do Relay continuamente, processando em pequenos blocos no lugar do lote de 1h
+- manter quem depende do Forge funcionando durante a transição
+- nada de virada única (big-bang): a migração tem que ir em passos e poder voltar atrás
