@@ -36,12 +36,6 @@ Use o slash command [`/catalogar`](./.claude/commands/catalogar.md) passando o t
 
 ## Categorias
 
-### [Desenvolvimento](./desenvolvimento/)
-
-Escrita, revisão e refatoração de código, design de APIs e arquitetura, debugging, testes e documentação técnica.
-
-_Nenhum prompt cadastrado ainda._
-
 ### [DevOps](./devops/)
 
 Pipelines de CI/CD, containers, orquestração, infraestrutura como código, observabilidade, SRE e segurança operacional.
@@ -55,28 +49,8 @@ Pipelines de CI/CD, containers, orquestração, infraestrutura como código, obs
 - [plano-executavel-de-etapa](./devops/plano-executavel-de-etapa/) — Elo 3 da cadeia: recebe o roteiro e o ID de uma etapa e devolve o plano executável com rollback.
 - [networkpolicy-sentinel](./devops/networkpolicy-sentinel/) — Reescreve uma NetworkPolicy permissiva na versão endurecida (default-deny + allows mínimos comentados) com autoverificação, a partir do padrão interno e do mapa de serviços.
 
-### [Produtividade](./produtividade/)
-
-Organização pessoal, gestão de tempo e tarefas, rotina, hábitos, foco e decisões sobre fluxo de trabalho individual.
-
-_Nenhum prompt cadastrado ainda._
-
-### [Finanças](./financas/)
-
-Orçamento, investimentos, planejamento financeiro, impostos e apoio a decisões financeiras.
-
-_Nenhum prompt cadastrado ainda._
-
-### [Criação de Conteúdo](./criacao-conteudo/)
-
-Roteiros, artigos, posts para redes sociais, material didático e copy de divulgação.
-
-_Nenhum prompt cadastrado ainda._
-
 <!--
-Ao adicionar um prompt, substituir "Nenhum prompt cadastrado ainda" pela lista:
-
-- [nome-do-prompt](./<slug-da-categoria>/<slug-do-prompt>/) — o que o prompt faz, em uma linha.
+Categoria nova nasce com o primeiro prompt dela: criar `<slug-da-categoria>/README.md` (escopo) e uma seção aqui no mesmo formato da DevOps.
 -->
 
 ## Contribuindo

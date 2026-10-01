@@ -17,7 +17,7 @@ Recebe um prompt como argumento, analisa, infere metadados, classifica em uma ca
 ## O que este comando NÃO faz
 
 - **Não modifica o texto do prompt.** O corpo do `prompt.md` é gravado exatamente como recebido em `$ARGUMENTS`, byte a byte, preservando quebras de linha, indentação e espaços.
-- **Não cria categoria nova sem aprovação.** Se nenhuma das 5 categorias existentes servir, propõe uma nova (slug + escopo) e aguarda confirmação.
+- **Não cria categoria nova sem aprovação.** Se nenhuma categoria existente servir, propõe uma nova (slug + escopo) e aguarda confirmação.
 - **Não faz commit.** Usuário revisa e commita manualmente.
 - **Não inventa informação fora do texto.** Campos que não dão para inferir viram `_A preencher_` no README.
 
@@ -38,12 +38,7 @@ Ler na ordem:
 
 1. `CLAUDE.md` da raiz — conferir convenções vigentes, especialmente a seção "Frontmatter padrão".
 2. `README.md` da raiz — mapear a ordem das categorias e o formato dos índices.
-3. Os 5 READMEs de categoria:
-   - `criacao-conteudo/README.md`
-   - `desenvolvimento/README.md`
-   - `devops/README.md`
-   - `financas/README.md`
-   - `produtividade/README.md`
+3. O `README.md` de cada categoria existente na raiz (hoje só `devops/README.md`; listar as pastas de primeiro nível que contêm `README.md`).
 
    Extrair de cada um: nome da categoria, seção "Escopo" e seção "Fora de escopo".
 
@@ -72,7 +67,7 @@ Regra de honestidade: **nunca inventar informação que não esteja no próprio 
 
 ### A5. Classificar a categoria
 
-Para cada uma das 5 categorias existentes, comparar o tema do prompt com os trechos "Escopo" e "Fora de escopo" dos respectivos READMEs. Escolher a categoria cujo "Escopo" dá o melhor match.
+Para cada categoria existente, comparar o tema do prompt com os trechos "Escopo" e "Fora de escopo" dos respectivos READMEs. Escolher a categoria cujo "Escopo" dá o melhor match.
 
 Apresentar a escolha com **justificativa citando o trecho do escopo** que deu match (ex.: *"Casa com `desenvolvimento/` — seu escopo lista 'Escrita e revisão de código', que é exatamente o que este prompt faz."*).
 
@@ -163,7 +158,7 @@ Na seção `## Prompts`:
 
 ### B5. Atualizar `README.md` raiz
 
-Localizar a seção da categoria (a ordem fixa é **Desenvolvimento → DevOps → Produtividade → Finanças → Criação de Conteúdo**; se for categoria nova, vai ao final).
+Localizar a seção da categoria (categorias na ordem em que aparecem no README; se for categoria nova, vai ao final).
 
 Aplicar a mesma mecânica da B4: substituir `_Nenhum prompt cadastrado ainda._` pela linha do prompt na primeira vez; anexar à lista existente nas próximas.
 
@@ -221,4 +216,4 @@ Listar ao usuário, em ordem, todos os arquivos criados e atualizados com caminh
 3. **Nunca inferir além do que o texto oferece.** Se não há base concreta, usar `_A preencher_` e informar isso ao usuário no reporte final.
 4. **Nunca escrever antes da aprovação.** Fase A apresenta o plano; Fase B só roda após um "ok" / "pode criar" / "aprovado" explícito.
 5. **Nunca fazer commit.** Commit é responsabilidade humana após revisão.
-6. **Respeitar a ordem fixa de categorias no README raiz**: Desenvolvimento → DevOps → Produtividade → Finanças → Criação de Conteúdo → (novas, ao final).
+6. **Respeitar a ordem das categorias no README raiz**: as existentes na ordem atual, novas ao final.

@@ -9,7 +9,7 @@
 
 | Convenção do template | Como ficou no playbook |
 |---|---|
-| Categorias como pastas na raiz, kebab-case, sem aninhar | Todos os nove prompts caem em `devops/`; as outras quatro categorias do template ficaram vazias e foram mantidas para preservar a estrutura. |
+| Categorias como pastas na raiz, kebab-case, sem aninhar | Todos os nove prompts caem em `devops/`. As outras quatro categorias do template (desenvolvimento, produtividade, finanças, criação de conteúdo) foram removidas: só tinham um README com "nenhum prompt cadastrado", e pasta vazia num playbook de operações é ruído, não estrutura. A convenção que fica é a regra, não a lista de exemplo: categoria nova nasce com o primeiro prompt dela. |
 | Um prompt por pasta, nomeada pelo resultado, não pela técnica | `triagem-de-pods`, `nota-de-triagem`, `causa-raiz`, `decisao-backpressure`, `networkpolicy-sentinel`. A cadeia do Checkpoint 05 virou três pastas (`diagnostico-pipeline-batch`, `roteiro-migracao-event-driven`, `plano-executavel-de-etapa`), porque cada elo é um prompt com seus próprios inputs; o README de cada um aponta os outros dois. |
 | `prompt.md` = frontmatter + texto puro com `{{variavel}}` | Os placeholders gerados pelo meta-prompting vieram em maiúsculas ou com chave simples (`{{SNAPSHOT}}`, `{ESTADO}`) e foram normalizados para minúsculas com duas chaves. Nenhum texto explicativo dentro do `prompt.md`. |
 | `README.md` = mesmo frontmatter + documentação humana | Frontmatter idêntico byte a byte (verificado com `diff` em cada commit). Seções: Objetivo, Quando usar, Exemplo de uso (com saída real do modelo), Limitações conhecidas. |
