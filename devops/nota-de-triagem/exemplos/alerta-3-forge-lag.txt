@@ -1,0 +1,2 @@
+2026-05-13 11:40:22 UTC [Forge] consumer lag 9min and climbing, batch forge-batch-ingest
+delayed after previous job failure, downstream Sentinel starting to lag

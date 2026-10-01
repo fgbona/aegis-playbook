@@ -1,0 +1,2 @@
+2026-05-13 03:11:00 UTC [Relay] ingest reject rate 6% for 8min, tenant wakanda-systems,
+buffer saturated after deploy 02:55

@@ -1,0 +1,3 @@
+2026-05-12 14:02:09 UTC [Sentinel] autoscaler hit max replicas (60/60) on sentinel-api,
+queue depth on Relay growing 2k/min, CPU avg 88%, tenant stark-industries
+sending 4x baseline volume after onboarding new region
