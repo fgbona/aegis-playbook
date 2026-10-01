@@ -30,6 +30,7 @@ Pipelines de CI/CD, containers, orquestração, infraestrutura como código, obs
 
 - [triagem-de-pods](./devops/triagem-de-pods/) — Triagem da saúde dos pods de um namespace Kubernetes a partir de um snapshot, com causa provável e próxima ação por pod.
 - [nota-de-triagem](./devops/nota-de-triagem/) — Converte um alerta cru do Sentinel na nota de triagem padronizada de cinco linhas (alerta, impacto, hipótese, ação, escalonamento).
+- [causa-raiz](./devops/causa-raiz/) — Análise de causa-raiz de degradação num cluster Elasticsearch cruzando configuração, métricas e logs, separando causa de consequência.
 
 ### [Produtividade](./produtividade/)
 
