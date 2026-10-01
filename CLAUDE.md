@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Propósito do repositório
 
-Catálogo de prompts em Markdown organizados por categoria / área de domínio. Não há código executável, build, testes ou pipeline — é um repositório documental cuja qualidade é medida pela clareza dos prompts e pela consistência da estrutura.
+Catálogo de prompts em Markdown organizados por categoria / área de domínio, tratado como código: cada prompt é versionado, pode ter testes em promptfoo ao lado do texto e a suíte roda em CI a cada alteração. A qualidade é medida pela clareza dos prompts, pela consistência da estrutura e pelos testes passando.
+
+Este repositório é o **playbook de IA operacional da Aegis**, construído no desafio IAOps da pós-graduação. O contexto do desafio, os prompts e as decisões por checkpoint estão em `docs/checkpoints/`.
 
 Compõe o material dos projetos da pós-graduação em AIOps e Inteligência Artificial com Engenharia Cloud ([pos.veronez.io/pos-aiops](https://pos.veronez.io/pos-aiops/)) — decisões de escopo e convenções devem considerar esse uso didático.
 
@@ -13,8 +15,10 @@ Compõe o material dos projetos da pós-graduação em AIOps e Inteligência Art
 ```
 <categoria>/
   <nome-do-prompt>/
-    prompt.md    # o prompt em si (conteúdo que será copiado/usado)
-    README.md    # metadados e documentação do prompt
+    prompt.md             # o prompt em si (conteúdo que será copiado/usado)
+    README.md             # metadados e documentação do prompt
+    promptfooconfig.yaml  # opcional: testes do prompt (determinísticos ou com juiz)
+    exemplos/             # opcional: entradas de exemplo usadas na documentação e nos testes
 ```
 
 Regras:
@@ -33,6 +37,14 @@ Use o slash command [`/catalogar`](./.claude/commands/catalogar.md) sempre que p
 2. Se criar categoria nova, adicionar um `README.md` na raiz da categoria explicando o escopo dela.
 3. Nomear a pasta do prompt descrevendo o *resultado*, não a técnica (ex.: `revisar-pr` é melhor que `prompt-chain-of-thought`).
 4. Manter o **texto do prompt** autocontido — não referenciar o `README.md` nem outros arquivos do repo, pois o prompt será extraído do contexto. Essa regra se aplica ao corpo do prompt; o frontmatter é parte da estrutura e não viola a autocontenção.
+
+## Testes e pipeline
+
+- Prompts de saída estruturada têm `promptfooconfig.yaml` na própria pasta, com asserts determinísticos e os limites operacionais do playbook (latência ≤ 5 s, custo ≤ US$ 0,01 por chamada).
+- Prompts de saída aberta têm juiz LLM (`llm-rubric`) com rubrica explícita e corte de aprovação.
+- Rodar um teste: `cd <categoria>/<prompt> && promptfoo eval -c promptfooconfig.yaml`. As chaves de API vêm do ambiente (`GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`).
+- O workflow em `.github/workflows/` roda a suíte a cada push e pull request e falha o build quando um prompt regride.
+- `docs/checkpoints/` guarda, por checkpoint do desafio, o prompt, a execução real (modelo, output) e a curadoria. É documentação de decisão, não entra na biblioteca.
 
 ## Convenções de conteúdo
 

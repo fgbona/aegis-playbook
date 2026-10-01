@@ -6,6 +6,25 @@ Este repositório faz parte do material dos projetos da pós-graduação em AIOp
 
 Convenções de estrutura, nomenclatura e manutenção estão em [`CLAUDE.md`](./CLAUDE.md).
 
+## Playbook de IA operacional da Aegis
+
+Este repositório é a entrega do desafio IAOps (Módulo 02 · Cap 05 - Avaliação de Prompts) da pós-graduação em AIOps e IA na Engenharia de Cloud. Ele é o playbook da Aegis: prompts parametrizáveis criados por meta-prompting, executados de verdade em dois provedores (Google e Anthropic), testados com promptfoo e gateados em CI.
+
+| Checkpoint | Entrega | Onde |
+|---|---|---|
+| 01 | Triagem de pods | [`devops/triagem-de-pods`](./devops/triagem-de-pods/) · [doc](./docs/checkpoints/01-triagem-de-pods.md) |
+| 02 | Nota de triagem | [`devops/nota-de-triagem`](./devops/nota-de-triagem/) · [doc](./docs/checkpoints/02-nota-de-triagem.md) |
+| 03 | Causa-raiz no Cerebro | [`devops/causa-raiz`](./devops/causa-raiz/) · [doc](./docs/checkpoints/03-causa-raiz.md) |
+| 04 | Decisão de backpressure | [`devops/decisao-backpressure`](./devops/decisao-backpressure/) · [doc](./docs/checkpoints/04-decisao-backpressure.md) |
+| 05 | Cadeia de migração do Forge | [`diagnostico-pipeline-batch`](./devops/diagnostico-pipeline-batch/) → [`roteiro-migracao-event-driven`](./devops/roteiro-migracao-event-driven/) → [`plano-executavel-de-etapa`](./devops/plano-executavel-de-etapa/) · [doc](./docs/checkpoints/05-migracao-forge.md) |
+| 06 | NetworkPolicy do Sentinel | [`devops/networkpolicy-sentinel`](./devops/networkpolicy-sentinel/) · [doc](./docs/checkpoints/06-networkpolicy-sentinel.md) |
+| 07 | A biblioteca vira código | [doc](./docs/checkpoints/07-biblioteca-vira-codigo.md) |
+| 08 | Testes determinísticos (promptfoo) | `promptfooconfig.yaml` em cada prompt estruturado · [doc](./docs/checkpoints/08-testes-deterministicos.md) |
+| 09 | Gate de qualidade com LLM-as-judge | [`devops/causa-raiz/promptfooconfig.yaml`](./devops/causa-raiz/promptfooconfig.yaml) · [doc](./docs/checkpoints/09-llm-as-judge.md) |
+| 10 | Pipeline em GitHub Actions | [`.github/workflows/`](./.github/workflows/) · [doc](./docs/checkpoints/10-pipeline.md) |
+
+Rodar os testes de um prompt: `cd devops/<prompt> && promptfoo eval -c promptfooconfig.yaml` (precisa de `GOOGLE_API_KEY` e `ANTHROPIC_API_KEY`).
+
 ## Como usar
 
 1. Navegar até a categoria de interesse.
