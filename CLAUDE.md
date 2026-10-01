@@ -6,10 +6,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Catálogo de prompts em Markdown organizados por categoria / área de domínio, tratado como código: cada prompt é versionado, pode ter testes em promptfoo ao lado do texto e a suíte roda em CI a cada alteração. A qualidade é medida pela clareza dos prompts, pela consistência da estrutura e pelos testes passando.
 
-Este repositório é o **playbook de IA operacional da Aegis**, construído no desafio IAOps da pós-graduação. O contexto do desafio, os prompts e as decisões por checkpoint estão em `docs/checkpoints/`.
-
-Compõe o material dos projetos da pós-graduação em AIOps e Inteligência Artificial com Engenharia Cloud ([pos.veronez.io/pos-aiops](https://pos.veronez.io/pos-aiops/)) — decisões de escopo e convenções devem considerar esse uso didático.
-
 ## Estrutura obrigatória
 
 ```
