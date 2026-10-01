@@ -1,0 +1,32 @@
+# Gate de qualidade do prompt causa-raiz com LLM-as-judge (Checkpoint 09).
+# Rodar a partir desta pasta: promptfoo eval -c promptfooconfig.yaml
+# A saída é aberta (não dá para testar com regex), então um juiz aplica a rubrica de
+# rubrica-juiz.txt: 4 critérios de 0 a 2, aprovado com total >= 6 e nenhum critério zerado.
+description: causa-raiz — gate de qualidade com juiz LLM (rubrica de 4 critérios, corte 6/8)
+
+prompts:
+  - file://prompt.md
+
+providers:
+  # Modelo de referência do prompt (Anthropic). É o que está sob teste.
+  - id: anthropic:messages:claude-sonnet-4-6
+    label: claude-sonnet-4-6
+    config:
+      max_tokens: 4000
+
+defaultTest:
+  options:
+    # Juiz: Google, de propósito um fornecedor diferente do modelo sob teste, para o modelo
+    # não corrigir a própria prova. Calibrado contra pontuação humana em 4 amostras
+    # (ver docs/checkpoints/09-llm-as-judge.md): desvio máximo de 1 ponto por critério.
+    provider: google:gemini-3.8-flash
+  assert:
+    - type: llm-rubric
+      value: file://rubrica-juiz.txt
+
+tests:
+  - description: incidente do Cerebro (config + métricas + logs do CP03)
+    vars:
+      config: file://exemplos/cerebro-config.yaml
+      metricas: file://exemplos/cerebro-metricas.txt
+      logs: file://exemplos/cerebro-logs.txt
