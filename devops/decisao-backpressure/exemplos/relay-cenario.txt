@@ -1,0 +1,5 @@
+Relay (barramento de eventos):
+- throughput sustentado: 180k msgs/s
+- pico observado no incidente da semana passada: 320k msgs/s por 25min
+- retenção atual: 4h
+- consumidores: Forge (ingestão), Sentinel (alerting em tempo real)
