@@ -1,0 +1,49 @@
+# Testes determinísticos do prompt nota-de-triagem (Checkpoint 08).
+# Rodar a partir desta pasta: promptfoo eval -c promptfooconfig.yaml
+description: nota-de-triagem — formato de cinco rótulos, handle de escalonamento e concisão
+
+prompts:
+  - file://prompt.md
+
+providers:
+  # Modelo de referência do prompt (Google): barato, rápido, fiel ao formato
+  - id: google:gemini-3.8-flash
+    label: gemini-3.8-flash
+    config:
+      generationConfig:
+        maxOutputTokens: 800
+        thinkingConfig:
+          thinkingLevel: LOW
+  # Segundo fornecedor (Anthropic), exigido pelo playbook
+  - id: anthropic:messages:claude-haiku-4-5-20251001
+    label: claude-haiku-4-5
+    config:
+      max_tokens: 800
+
+defaultTest:
+  assert:
+    # contém os cinco rótulos, na grafia exata do padrão
+    - type: contains-all
+      value: ["ALERTA:", "IMPACTO:", "HIPÓTESE INICIAL:", "AÇÃO IMEDIATA:", "ESCALAR PARA:"]
+    # escalonamento tem um handle @time
+    - type: regex
+      value: 'ESCALAR PARA:.*@\w+'
+    # nota concisa: no máximo 8 linhas
+    - type: javascript
+      value: output.trim().split('\n').length <= 8
+    # limites operacionais do playbook
+    - type: latency
+      threshold: 5000
+    - type: cost
+      threshold: 0.01
+
+tests:
+  - description: alerta-1 Sentinel autoscaler no teto
+    vars:
+      alerta_cru: file://exemplos/alerta-1-sentinel-autoscaler.txt
+  - description: alerta-2 Relay rejeitando ingestão
+    vars:
+      alerta_cru: file://exemplos/alerta-2-relay-reject.txt
+  - description: alerta-3 Forge com lag
+    vars:
+      alerta_cru: file://exemplos/alerta-3-forge-lag.txt

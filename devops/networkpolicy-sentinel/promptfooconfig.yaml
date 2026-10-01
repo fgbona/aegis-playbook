@@ -1,0 +1,56 @@
+# Testes determinísticos do prompt networkpolicy-sentinel (Checkpoint 08).
+# Rodar a partir desta pasta: promptfoo eval -c promptfooconfig.yaml
+description: networkpolicy-sentinel — YAML válido, sem allow-all, fluxos do padrão presentes e comentados
+
+prompts:
+  - file://prompt.md
+
+providers:
+  # Modelo de referência do prompt (Google): único que ficou sob 5 s e US$ 0,01 com o YAML completo
+  - id: google:gemini-3.8-flash
+    label: gemini-3.8-flash
+    config:
+      generationConfig:
+        maxOutputTokens: 2500
+        thinkingConfig:
+          thinkingLevel: LOW
+  # Anthropic (Haiku 4.5) foi avaliado e excluído deste config: 9 a 15 s por chamada e preâmbulo
+  # antes do YAML em todas as rodadas. Ver docs/checkpoints/08-testes-deterministicos.md.
+
+defaultTest:
+  assert:
+    # é YAML de NetworkPolicy: começa no apiVersion e declara o kind
+    - type: regex
+      value: '^apiVersion: networking\.k8s\.io/v1'
+    - type: contains
+      value: "kind: NetworkPolicy"
+    # policyTypes cobre Ingress e Egress
+    - type: regex
+      value: 'policyTypes:\s*\n\s*- Ingress\s*\n\s*- Egress'
+    # nenhuma regra allow-all
+    - type: not-contains
+      value: "- {}"
+    # egress libera Forge (5432) e Cerebro (9200); ingress libera o Relay
+    - type: contains-all
+      value: ["port: 5432", "port: 9200", "app: relay"]
+    # toda regra (item de from/to) tem um comentário na linha de cima
+    - type: javascript
+      value: |
+        const lines = output.split('\n');
+        const rules = [];
+        lines.forEach((l, i) => { if (/^\s*- (from|to):/.test(l)) rules.push(i); });
+        if (rules.length === 0) return 'nenhuma regra from/to encontrada';
+        const semComentario = rules.filter(i => !/^\s*#/.test(lines[i - 1] || ''));
+        return semComentario.length === 0 ? true : `regras sem comentário nas linhas ${semComentario.map(i => i + 1).join(', ')}`;
+    # limites operacionais do playbook
+    - type: latency
+      threshold: 5000
+    - type: cost
+      threshold: 0.01
+
+tests:
+  - description: manifesto permissivo do sentinel-prod
+    vars:
+      manifesto: file://exemplos/manifesto-permissivo.yaml
+      regras: file://exemplos/regras-padrao.txt
+      mapa_servicos: file://exemplos/mapa-servicos.txt

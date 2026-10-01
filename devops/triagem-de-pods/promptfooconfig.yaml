@@ -1,0 +1,63 @@
+# Testes determinísticos do prompt triagem-de-pods (Checkpoint 08).
+# Rodar a partir desta pasta: promptfoo eval -c promptfooconfig.yaml
+description: triagem-de-pods — cita o pod e a causa certos, e reconhece cluster saudável
+
+prompts:
+  - file://prompt.md
+
+providers:
+  # Modelo de referência do prompt (Anthropic)
+  - id: anthropic:messages:claude-haiku-4-5-20251001
+    label: claude-haiku-4-5
+    config:
+      max_tokens: 1500
+  # Segundo fornecedor (Google); sem thinking baixo ele trunca e estoura a latência
+  - id: google:gemini-3.8-flash
+    label: gemini-3.8-flash
+    config:
+      generationConfig:
+        maxOutputTokens: 1500
+        thinkingConfig:
+          thinkingLevel: LOW
+
+defaultTest:
+  assert:
+    # limites operacionais do playbook
+    - type: latency
+      threshold: 5000
+    - type: cost
+      threshold: 0.01
+
+tests:
+  - description: entrada-1 pod reiniciando por OOM
+    vars:
+      snapshot: file://exemplos/entrada-1-pod-reiniciando.txt
+    assert:
+      - type: contains
+        value: sentinel-api-7d9c8b6f4-h4m2t
+      - type: regex
+        value: 'OOMKilled|mem[óo]ria'
+  - description: entrada-2 dois pods que não sobem
+    vars:
+      snapshot: file://exemplos/entrada-2-pods-nao-sobem.txt
+    assert:
+      - type: contains-all
+        value: ["sentinel-api-7d9c8b6f4-zzp10", "sentinel-ingest-8f7a9c5b-4dkqm"]
+      - type: regex
+        value: '2\.9\.2|ImagePullBackOff'
+      - type: regex
+        value: 'Insufficient|cpu'
+  - description: entrada-3 tudo saudável
+    vars:
+      snapshot: file://exemplos/entrada-3-tudo-saudavel.txt
+    assert:
+      # declara que não há pod problemático
+      - type: regex
+        value: 'PODS PROBLEMÁTICOS:\s*\n\s*Nenhum'
+      - type: contains
+        value: SAUDÁVEL
+      # e não classifica nenhum pod como falha
+      - type: not-contains
+        value: "Causa provável"
+      - type: javascript
+        value: "!/\\| STATUS=/.test(output)"
