@@ -1,0 +1,113 @@
+# Gate de qualidade do playbook (Checkpoint 10).
+# Roda a suíte promptfoo de cada prompt testado a cada push na main e a cada pull request,
+# e falha o build quando um prompt regride. Desenho do gate e alternativas descartadas:
+# docs/checkpoints/10-pipeline.md
+name: promptfoo
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: promptfoo-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  eval:
+    name: ${{ matrix.prompt }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        prompt:
+          - devops/nota-de-triagem
+          - devops/triagem-de-pods
+          - devops/networkpolicy-sentinel
+          - devops/causa-raiz
+    env:
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      PROMPTFOO_DISABLE_TELEMETRY: "1"
+      PROMPTFOO_VERSION: "0.123.1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Pula prompt sem testes
+        id: has-config
+        run: |
+          if [ -f "${{ matrix.prompt }}/promptfooconfig.yaml" ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "ok=false" >> "$GITHUB_OUTPUT"; fi
+
+      # Uma rodada; se falhar, uma segunda. Falha de conteúdo falha duas vezes e derruba o build;
+      # falha só de latência por variação da API costuma passar na segunda. Nunca mais que 2 rodadas.
+      - name: promptfoo eval (com um rerun em caso de falha)
+        if: steps.has-config.outputs.ok == 'true'
+        working-directory: ${{ matrix.prompt }}
+        run: |
+          set +e
+          npx --yes promptfoo@${PROMPTFOO_VERSION} eval -c promptfooconfig.yaml --no-cache --no-progress-bar -o result-1.json
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            echo "::warning title=${{ matrix.prompt }}::primeira rodada falhou (rc=$rc); rerodando uma vez"
+            npx --yes promptfoo@${PROMPTFOO_VERSION} eval -c promptfooconfig.yaml --no-cache --no-progress-bar -o result-2.json
+            rc=$?
+          fi
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          exit $rc
+        id: eval
+
+      - name: Resumo no job
+        if: always() && steps.has-config.outputs.ok == 'true'
+        working-directory: ${{ matrix.prompt }}
+        run: |
+          f=$(ls -t result-*.json 2>/dev/null | head -1); [ -z "$f" ] && exit 0
+          {
+            echo "### ${{ matrix.prompt }} ($f)"
+            echo
+            echo "| Provider | Caso | Resultado | Latência | Custo | Falhou |"
+            echo "|---|---|---|---|---|---|"
+            jq -r '.results.results[] | "| \(.provider.label // .provider.id) | \(.testCase.description // "-") | \(if .success then "✅" else "❌" end) | \(.latencyMs) ms | US$ \((.cost // 0)*10000|round/10000) | \([.gradingResult.componentResults[]? | select(.pass==false) | .assertion.type] | join(", ")) |"' "$f"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guarda resultados
+        if: always() && steps.has-config.outputs.ok == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: promptfoo-${{ strategy.job-index }}
+          path: ${{ matrix.prompt }}/result-*.json
+          retention-days: 14
+
+  comment:
+    name: comenta no PR
+    if: github.event_name == 'pull_request' && always()
+    needs: eval
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: results
+      - name: Monta e publica o comentário
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULT: ${{ needs.eval.result }}
+        run: |
+          {
+            echo "## promptfoo — ${RESULT}"
+            echo
+            echo "| Prompt | Provider | Caso | Resultado | Latência | Custo | Falhou |"
+            echo "|---|---|---|---|---|---|---|"
+            for f in $(ls -t results/*/result-*.json 2>/dev/null); do
+              p=$(jq -r '.config.description // "?"' "$f" | cut -d' ' -f1)
+              jq -r --arg p "$p" '.results.results[] | "| \($p) | \(.provider.label // .provider.id) | \(.testCase.description // "-") | \(if .success then "✅" else "❌" end) | \(.latencyMs) ms | US$ \((.cost // 0)*10000|round/10000) | \([.gradingResult.componentResults[]? | select(.pass==false) | .assertion.type] | join(", ")) |"' "$f"
+            done
+          } > comment.md
+          gh pr comment "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --body-file comment.md
